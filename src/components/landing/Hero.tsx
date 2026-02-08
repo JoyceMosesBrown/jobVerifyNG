@@ -28,7 +28,7 @@ export function Hero() {
             </h1>
 
             <p className="text-lg text-muted-foreground mb-8 max-w-lg">
-              We don't post jobs. We help Nigerians verify job adverts before applying — so you never fall for a scam.
+              We don't post jobs. We help Nigerians verify job adverts before applying so you never fall for a scam.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-8">

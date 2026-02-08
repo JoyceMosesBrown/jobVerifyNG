@@ -3,46 +3,57 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
- import { ShieldCheck, Loader2, Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, Loader2, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const signupSchema = z
+  .object({
+    name: z
+      .string()
+      .min(2, "Name must be at least 2 characters long")
+      .max(50, "Name must not exceed 50 characters")
+      .regex(/^[A-Za-z\s]+$/, "Name must contain only letters and spaces"),
+    email: z.string().email("Please enter a valid email address"),
+    password: z
+      .string()
+      .min(6, "Password must be at least 6 characters long")
+      .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords do not match",
+  });
+
+type SignupFormValues = z.infer<typeof signupSchema>;
+
 export default function SignupPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
   const { signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
+    mode: "onChange",
+  });
 
-    if (password !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (password.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password must be at least 6 characters",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const onSubmit = async (data: SignupFormValues) => {
     setIsLoading(true);
 
     try {
-      const result = await signUp(email, password, name);
+      const result = await signUp(data.email, data.password, data.name);
 
       if (result.error) {
         toast({
@@ -51,10 +62,11 @@ export default function SignupPage() {
           variant: "destructive",
         });
       } else {
-         toast({
-           title: "Account Created!",
-           description: "Your account has been created successfully.",
-         });
+        toast({
+          title: "Account Created!",
+          description: "Your account has been created successfully.",
+        });
+        navigate("/login");
       }
     } catch (error: any) {
       toast({
@@ -70,7 +82,6 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen hero-gradient flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
           <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
             <ShieldCheck className="w-7 h-7 text-primary-foreground" />
@@ -80,25 +91,25 @@ export default function SignupPage() {
           </span>
         </Link>
 
-        {/* Signup Card */}
         <div className="bg-card rounded-2xl border border-border p-8 shadow-lg">
           <h1 className="text-2xl font-bold text-center mb-2">Create Account</h1>
           <p className="text-muted-foreground text-center mb-8">
             Sign up to save your verification history
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div>
               <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
                 placeholder="John Doe"
-                required
                 className="mt-2"
+                {...register("name")}
               />
+              {errors.name && (
+                <p className="mt-2 text-sm text-red-500">{errors.name.message}</p>
+              )}
             </div>
 
             <div>
@@ -106,12 +117,13 @@ export default function SignupPage() {
               <Input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                required
                 className="mt-2"
+                {...register("email")}
               />
+              {errors.email && (
+                <p className="mt-2 text-sm text-red-500">{errors.email.message}</p>
+              )}
             </div>
 
             <div>
@@ -120,10 +132,8 @@ export default function SignupPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  required
+                  {...register("password")}
                 />
                 <button
                   type="button"
@@ -133,6 +143,9 @@ export default function SignupPage() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {errors.password && (
+                <p className="mt-2 text-sm text-red-500">{errors.password.message}</p>
+              )}
             </div>
 
             <div>
@@ -140,15 +153,16 @@ export default function SignupPage() {
               <Input
                 id="confirmPassword"
                 type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                required
                 className="mt-2"
+                {...register("confirmPassword")}
               />
+              {errors.confirmPassword && (
+                <p className="mt-2 text-sm text-red-500">{errors.confirmPassword.message}</p>
+              )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading || !isValid}>
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
