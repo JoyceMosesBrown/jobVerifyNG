@@ -335,7 +335,7 @@ async function enforceVerificationLimit({ identifierBase, advertKey }) {
 
 const INDICATOR_EXPLANATIONS = {
   freeEmail: "Professional companies typically use their own domain for email (e.g., hr@company.com). Free email services like Gmail or Yahoo are easy to create anonymously and are commonly used in scam postings.",
-  noCompanyName: "Legitimate job adverts usually mention the hiring company by name with a legal suffix (Ltd, Inc, LLC, etc.). Missing company identification makes it difficult to verify the employer.",
+  noCompanyName: "Legitimate job adverts usually mention the hiring company by name. Missing company identification makes it difficult to verify the employer.",
   companyMismatch: "When the recruiter's email domain doesn't match the company mentioned in the advert, it may indicate impersonation or a fraudulent posting.",
   noInterview: "Legitimate employers conduct interviews to assess candidates. Skipping the interview process entirely is a common tactic in employment scams.",
   instantHiring: "Promises of immediate hiring without proper evaluation are designed to pressure applicants into acting quickly before they can verify the opportunity.",
