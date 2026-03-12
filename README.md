@@ -236,6 +236,19 @@ The risk scoring indicators and weight assignments are informed by the following
 
 ---
 
+## Deployment
+
+The application is deployed separately — frontend on Netlify and backend on Render.
+
+```
+Frontend (Netlify):   https://jobverify-ng.netlify.app
+Backend  (Render):    https://jobverify-ng-api.onrender.com
+```
+
+> **Note:** The backend runs on Render's free tier and may take ~50 seconds to respond on the first request after a period of inactivity.
+
+---
+
 ## License
 
 Developed as part of an academic capstone project. All rights reserved.
