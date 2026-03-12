@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiGetVerification, apiSaveVerification } from "@/lib/api";
@@ -25,7 +24,12 @@ import {
 import { RiskMeter } from "@/components/verify/RiskMeter";
 import { ReportDialog } from "@/components/verify/ReportDialog";
 
-type Verdict = "verified" | "likely_legit" | "needs_review" | "suspicious" | "high_risk_scam";
+type Verdict =
+  | "verified"
+  | "likely_legit"
+  | "needs_review"
+  | "suspicious"
+  | "high_risk_scam";
 
 interface VerificationResult {
   id: string;
@@ -57,19 +61,19 @@ const verdictConfig = {
   },
   needs_review: {
     icon: Search,
-    label: "Medium Risk",
-    color: "bg-blue-100 text-blue-800 border-blue-200",
+    label: "Moderate Risk",
+    color: "bg-yellow-100 text-yellow-800 border-yellow-200",
     description: "Some concerns detected. Review carefully and verify company details independently.",
   },
   suspicious: {
     icon: AlertTriangle,
-    label: "High Risk",
+    label: "Moderate Risk",
     color: "bg-yellow-100 text-yellow-800 border-yellow-200",
     description: "Multiple warning signs detected. Proceed with extreme caution.",
   },
   high_risk_scam: {
     icon: XCircle,
-    label: "Very High Risk",
+    label: "High Risk",
     color: "bg-red-100 text-red-800 border-red-200",
     description: "Strong indicators of fraudulent activity. Do not engage with this advert.",
   },
@@ -80,6 +84,10 @@ export default function ResultPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // ✅ guest vs logged-in
+  const isLoggedIn = !!user;
+
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -89,6 +97,7 @@ export default function ResultPage() {
     if (id) {
       fetchResult();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchResult = async () => {
@@ -114,6 +123,7 @@ export default function ResultPage() {
 
   const handleSave = async () => {
     if (!user) {
+      // guests shouldn't even see the button, but keep this as safety
       toast({
         title: "Login Required",
         description: "Please log in to save verification results",
@@ -125,7 +135,7 @@ export default function ResultPage() {
     setSaving(true);
     try {
       await apiSaveVerification(id!);
-      setResult((prev) => prev ? { ...prev, saved: true } : null);
+      setResult((prev) => (prev ? { ...prev, saved: true } : null));
       toast({
         title: "Saved",
         description: "Verification result saved to your history",
@@ -142,6 +152,19 @@ export default function ResultPage() {
     }
   };
 
+  const handleReportClick = () => {
+    if (!user) {
+      // guests shouldn't even see the button, but keep this as safety
+      toast({
+        title: "Login Required",
+        description: "Please log in to report job adverts",
+      });
+      navigate("/login");
+      return;
+    }
+    setShowReportDialog(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -149,23 +172,20 @@ export default function ResultPage() {
         <main className="flex-1 flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </main>
-        <Footer />
       </div>
     );
   }
 
-  if (!result) {
-    return null;
-  }
+  if (!result) return null;
 
   const config = verdictConfig[result.verdict] || verdictConfig.likely_legit;
-  
-  // Override for 0% risk score - show "Legit" instead of "Low Risk"
+
   const isLegit = result.risk_score === 0;
   const displayLabel = isLegit ? "Legit" : config.label;
-  const displayDescription = isLegit 
+  const displayDescription = isLegit
     ? "No risk indicators detected. This appears to be a legitimate job advert."
     : config.description;
+
   const VerdictIcon = config.icon;
 
   return (
@@ -196,19 +216,21 @@ export default function ResultPage() {
                 className="mb-6"
               >
                 <motion.div
-                  animate={{ 
+                  animate={{
                     boxShadow: [
                       "0 0 0 0 rgba(239, 68, 68, 0.4)",
                       "0 0 0 10px rgba(239, 68, 68, 0)",
-                      "0 0 0 0 rgba(239, 68, 68, 0)"
-                    ]
+                      "0 0 0 0 rgba(239, 68, 68, 0)",
+                    ],
                   }}
                   transition={{ duration: 2, repeat: Infinity }}
                   className="bg-red-600 text-white rounded-xl p-6 border-2 border-red-700"
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <Skull className="w-8 h-8" />
-                    <h2 className="text-xl md:text-2xl font-bold">🚨 DANGER: LIKELY SCAM DETECTED</h2>
+                    <h2 className="text-xl md:text-2xl font-bold">
+                      🚨 DANGER: LIKELY SCAM DETECTED
+                    </h2>
                   </div>
                   <p className="text-red-100 text-lg">
                     Do <strong>NOT</strong> share personal information or make any payments to this recruiter.
@@ -228,7 +250,9 @@ export default function ResultPage() {
                 <div className="bg-orange-500 text-white rounded-xl p-6 border-2 border-orange-600">
                   <div className="flex items-center gap-3 mb-3">
                     <AlertOctagon className="w-7 h-7" />
-                    <h2 className="text-xl font-bold">⚠️ WARNING: Multiple Red Flags Detected</h2>
+                    <h2 className="text-xl font-bold">
+                      ⚠️ WARNING: Multiple Red Flags Detected
+                    </h2>
                   </div>
                   <p className="text-orange-100">
                     Proceed with extreme caution. Verify this opportunity through official company channels.
@@ -297,40 +321,41 @@ export default function ResultPage() {
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setShowReportDialog(true)}
-                >
-                  <Flag className="w-4 h-4 mr-2" />
-                  Report This Advert
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={handleSave}
-                  disabled={saving || result.saved}
-                >
-                  {saving ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4 mr-2" />
-                  )}
-                  {result.saved ? "Saved" : "Save Result"}
-                </Button>
-              </div>
+              {/* ✅ FINAL: Actions ONLY for logged-in users (no guest message) */}
+              {isLoggedIn && (
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button variant="outline" className="flex-1" onClick={handleReportClick}>
+                    <Flag className="w-4 h-4 mr-2" />
+                    Report This Advert
+                  </Button>
+
+                  <Button
+                    className="flex-1"
+                    onClick={handleSave}
+                    disabled={saving || result.saved}
+                  >
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    {result.saved ? "Saved" : "Save Result"}
+                  </Button>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
       </main>
-      <Footer />
 
-      <ReportDialog
-        open={showReportDialog}
-        onOpenChange={setShowReportDialog}
-        verificationId={id!}
-      />
+      {/* ✅ Report dialog ONLY for logged-in users */}
+      {isLoggedIn && (
+        <ReportDialog
+          open={showReportDialog}
+          onOpenChange={setShowReportDialog}
+          verificationId={id!}
+        />
+      )}
     </div>
   );
 }

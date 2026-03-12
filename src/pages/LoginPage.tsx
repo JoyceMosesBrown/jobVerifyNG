@@ -17,7 +17,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleUserLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -35,9 +35,15 @@ export default function LoginPage() {
           title: "Welcome back!",
           description: "You have successfully logged in.",
         });
-
-        // ✅ Redirect immediately
-        navigate("/dashboard");
+        // The signIn function updates userRole in context,
+        // but we need to check the role from the stored user
+        const stored = localStorage.getItem("jv_user");
+        const userData = stored ? JSON.parse(stored) : null;
+        if (userData?.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
       }
     } catch {
       toast({
@@ -70,7 +76,7 @@ export default function LoginPage() {
             Sign in to access your dashboard
           </p>
 
-          <form onSubmit={handleUserLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <Label>Email</Label>
               <Input
@@ -115,12 +121,14 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm mt-6">
-            Don’t have an account?{" "}
-            <Link to="/signup" className="text-primary font-medium">
-              Sign up
-            </Link>
-          </p>
+          <div className="text-center text-sm mt-6">
+            <p>
+              Don't have an account?{" "}
+              <Link to="/signup" className="text-primary font-medium">
+                Sign up
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

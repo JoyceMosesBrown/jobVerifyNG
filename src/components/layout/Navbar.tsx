@@ -47,7 +47,7 @@ export function Navbar() {
               How It Works
             </NavLink>
             <NavLink to="/about" className={navLinkClass} activeClassName={activeNavClass}>
-              About
+              About Us
             </NavLink>
           </nav>
         )}
@@ -110,7 +110,7 @@ export function Navbar() {
                   activeClassName={activeNavClass}
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  About
+                  About Us
                 </NavLink>
               </>
             )}

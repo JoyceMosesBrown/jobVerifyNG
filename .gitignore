@@ -42,3 +42,18 @@ lerna-debug.log*
 # =========================
 .vscode/*
 !.vscode/extensions.json
+
+# =========================
+# Claude Code
+# =========================
+.claude/
+
+# =========================
+# Tesseract trained data
+# =========================
+*.traineddata
+
+# =========================
+# Temp files
+# =========================
+start-vite.js

@@ -1,5 +1,4 @@
 import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
 import { VerifyForm } from "@/components/verify/VerifyForm";
 import { motion } from "framer-motion";
 
@@ -29,7 +28,6 @@ export default function VerifyPage() {
           <VerifyForm />
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

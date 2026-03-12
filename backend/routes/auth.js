@@ -60,7 +60,18 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Please provide email and password" });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    let user = await User.findOne({ email: email.toLowerCase() });
+
+    // Auto-create admin account if logging in with the admin email for the first time
+    if (!user && process.env.ADMIN_EMAIL && email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase()) {
+      user = await User.create({
+        name: "Admin",
+        email: process.env.ADMIN_EMAIL.toLowerCase(),
+        password: process.env.ADMIN_PASSWORD,
+        role: "admin",
+        isVerified: true,
+      });
+    }
 
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ error: "Invalid email or password" });

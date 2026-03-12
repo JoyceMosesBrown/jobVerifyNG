@@ -1,6 +1,5 @@
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { ShieldCheck, Users, Target, Heart, CheckCircle, Shield, Zap } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ShieldCheck, Users, Target, Heart, CheckCircle, Shield, Zap, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 
 const values = [
@@ -29,7 +28,15 @@ const values = [
 export default function AboutPage() {
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      {/* Back Navigation */}
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container py-4">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+            Return to Home
+          </Link>
+        </div>
+      </div>
       <main className="flex-1">
         {/* Hero */}
         <section className="hero-gradient py-20 relative overflow-hidden">
@@ -232,7 +239,6 @@ export default function AboutPage() {
           </div>
         </section>
       </main>
-      <Footer />
     </div>
   );
 }

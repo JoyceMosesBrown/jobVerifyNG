@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { apiGetDashboard } from "@/lib/api";
+import { apiGetDashboard, apiGetMyMessages } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import {
   ShieldCheck,
@@ -13,6 +12,9 @@ import {
   User,
   ChevronRight,
   Loader2,
+  MessageSquare,
+  CheckCircle,
+  Clock,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
@@ -43,9 +45,9 @@ const verdictColors: Record<string, string> = {
 const verdictLabels: Record<string, string> = {
   verified: "Low Risk",
   likely_legit: "Low Risk",
-  needs_review: "Medium Risk",
-  suspicious: "High Risk",
-  high_risk_scam: "Very High Risk",
+  needs_review: "Moderate Risk",
+  suspicious: "Moderate Risk",
+  high_risk_scam: "High Risk",
 };
 
 const getVerdictLabel = (verdict: string, riskScore: number): string => {
@@ -60,6 +62,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [verifications, setVerifications] = useState<Verification[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
+  const [myMessages, setMyMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalVerifications: 0,
@@ -84,10 +87,14 @@ export default function DashboardPage() {
 
   const fetchData = async () => {
     try {
-      const data = await apiGetDashboard();
+      const [data, messages] = await Promise.all([
+        apiGetDashboard(),
+        apiGetMyMessages(),
+      ]);
       setVerifications(data.verifications);
       setReports(data.reports);
       setStats(data.stats);
+      setMyMessages(messages);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -102,8 +109,7 @@ export default function DashboardPage() {
         <main className="flex-1 flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </main>
-        <Footer />
-      </div>
+        </div>
     );
   }
 
@@ -277,9 +283,67 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+
+          {/* My Messages */}
+          <div className="mt-8 bg-card rounded-xl border border-border p-6">
+            <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" />
+              My Messages
+            </h2>
+            {myMessages.length > 0 ? (
+              <div className="space-y-4">
+                {myMessages.map((m) => (
+                  <div
+                    key={m.id}
+                    className="p-4 rounded-lg border border-border"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(m.created_at), "MMM d, yyyy")}
+                      </p>
+                      <Badge
+                        className={
+                          m.status === "replied"
+                            ? "bg-green-100 text-green-800"
+                            : m.status === "read"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }
+                      >
+                        {m.status === "replied" ? (
+                          <><CheckCircle className="w-3 h-3 mr-1" /> Replied</>
+                        ) : m.status === "read" ? (
+                          <><Clock className="w-3 h-3 mr-1" /> Seen</>
+                        ) : (
+                          <><Clock className="w-3 h-3 mr-1" /> Pending</>
+                        )}
+                      </Badge>
+                    </div>
+                    <p className="text-sm mb-3">{m.message}</p>
+                    {m.admin_reply && (
+                      <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 mt-2">
+                        <p className="text-xs font-medium text-primary mb-1">Admin Reply:</p>
+                        <p className="text-sm">{m.admin_reply}</p>
+                        {m.replied_at && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {format(new Date(m.replied_at), "MMM d, yyyy 'at' h:mm a")}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No messages yet</p>
+                <p className="text-xs">Messages you send via Contact will appear here</p>
+              </div>
+            )}
+          </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

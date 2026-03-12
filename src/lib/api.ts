@@ -191,6 +191,33 @@ export async function apiVerify(body: {
   });
 }
 
+// ✅ NEW: Verify Document (PDF Upload)
+export async function apiVerifyDocument(
+  formData: FormData
+): Promise<{ id?: string; message?: string }> {
+  const token = getToken();
+
+  const headers: Record<string, string> = {};
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}/api/verify/document`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Document verification failed");
+  }
+
+  return data;
+}
+
 export async function apiGetVerification(id: string): Promise<VerificationResult> {
   return apiFetch<VerificationResult>(`/api/verify/${id}`);
 }
@@ -221,6 +248,18 @@ export async function apiSubmitReport(body: {
 
 // ========== ADMIN API ==========
 
+export interface AdminStats {
+  totalVerifications: number;
+  totalUsers: number;
+  pendingReports: number;
+  blacklistCount: number;
+  scamsDetected: number;
+}
+
+export async function apiGetAdminStats(): Promise<AdminStats> {
+  return apiFetch<AdminStats>("/api/admin");
+}
+
 export async function apiGetAdminReports(): Promise<any[]> {
   return apiFetch("/api/admin/reports");
 }
@@ -246,4 +285,38 @@ export async function apiAddToBlacklist(type: string, value: string): Promise<vo
 
 export async function apiDeleteBlacklist(id: string): Promise<void> {
   await apiFetch(`/api/admin/blacklist/${id}`, { method: "DELETE" });
+}
+
+// ── Contact Messages ──
+
+export async function apiSendContactMessage(name: string, email: string, message: string): Promise<void> {
+  await apiFetch("/api/contact", {
+    method: "POST",
+    body: JSON.stringify({ name, email, message }),
+  });
+}
+
+export async function apiGetAdminMessages(): Promise<any[]> {
+  return apiFetch<any[]>("/api/admin/messages");
+}
+
+export async function apiMarkMessageRead(id: string): Promise<void> {
+  await apiFetch(`/api/admin/messages/${id}/read`, { method: "PUT" });
+}
+
+export async function apiDeleteMessage(id: string): Promise<void> {
+  await apiFetch(`/api/admin/messages/${id}`, { method: "DELETE" });
+}
+
+export async function apiReplyToMessage(id: string, reply: string): Promise<void> {
+  await apiFetch(`/api/admin/messages/${id}/reply`, {
+    method: "PUT",
+    body: JSON.stringify({ reply }),
+  });
+}
+
+// ── User's own messages ──
+
+export async function apiGetMyMessages(): Promise<any[]> {
+  return apiFetch<any[]>("/api/contact/my-messages");
 }
