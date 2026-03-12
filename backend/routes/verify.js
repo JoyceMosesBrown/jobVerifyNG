@@ -16,27 +16,55 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 const PAYMENT_KEYWORDS = [
-  "pay",
-  "payment",
-  "fee",
-  "deposit",
-  "transfer",
-  "send money",
+  // Scam-specific payment request phrases
+  "pay a fee",
+  "pay a deposit",
+  "pay to apply",
+  "pay to start",
+  "pay to secure",
+  "pay before",
+  "pay upfront",
+  "pay for training",
+  "pay for materials",
+  "pay for your",
+  "you must pay",
+  "you need to pay",
+  "applicants must pay",
+  "candidates must pay",
+  "required to pay",
+  // Fee-specific scam phrases
   "registration fee",
   "processing fee",
   "training fee",
+  "application fee",
+  "onboarding fee",
+  "equipment fee",
+  "background check fee",
+  "fee required",
+  "fee of",
+  "fee for",
+  "upfront fee",
+  // Deposit scam phrases
+  "deposit required",
+  "deposit before",
+  // Payment/transfer scam phrases
   "advance payment",
+  "upfront payment",
+  "payment required",
+  "send money",
+  "send payment",
+  "transfer money",
+  "wire money",
+  "bank transfer before",
+  "transfer before",
+  // Scam payment methods
   "western union",
+  "moneygram",
   "bitcoin",
   "crypto",
-  "bank transfer before",
-  "pay before",
+  // Nigerian-specific scam indicators
   "₦",
   "naira upfront",
-  "pay to secure",
-  "payment required",
-  "fee required",
-  "transfer before",
 ];
 
 const PROCUREMENT_CONTEXT_KEYWORDS = [
