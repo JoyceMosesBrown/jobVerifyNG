@@ -13,7 +13,7 @@ const verificationSchema = new mongoose.Schema(
       enum: ["verified", "likely_legit", "needs_review", "suspicious", "high_risk_scam"],
       required: true,
     },
-    indicators: { type: [String], default: [] },
+    indicators: { type: [mongoose.Schema.Types.Mixed], default: [] },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     saved: { type: Boolean, default: false },
   },

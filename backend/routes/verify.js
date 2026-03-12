@@ -333,11 +333,33 @@ async function enforceVerificationLimit({ identifierBase, advertKey }) {
   return { allowed: true };
 }
 
-function scoreIfFound({ found, weightKey, customIndicator }) {
+const INDICATOR_EXPLANATIONS = {
+  freeEmail: "Professional companies typically use their own domain for email (e.g., hr@company.com). Free email services like Gmail or Yahoo are easy to create anonymously and are commonly used in scam postings.",
+  noCompanyName: "Legitimate job adverts usually mention the hiring company by name with a legal suffix (Ltd, Inc, LLC, etc.). Missing company identification makes it difficult to verify the employer.",
+  companyMismatch: "When the recruiter's email domain doesn't match the company mentioned in the advert, it may indicate impersonation or a fraudulent posting.",
+  noInterview: "Legitimate employers conduct interviews to assess candidates. Skipping the interview process entirely is a common tactic in employment scams.",
+  instantHiring: "Promises of immediate hiring without proper evaluation are designed to pressure applicants into acting quickly before they can verify the opportunity.",
+  urgencyLanguage: "Creating a false sense of urgency is a classic manipulation tactic used by scammers to prevent applicants from taking time to research the opportunity.",
+  unrealisticSalary: "Salary offers that are significantly above market rates for the role and experience level are often used to lure victims into scam schemes.",
+  urlShortener: "URL shorteners hide the actual destination website, making it impossible to verify where a link leads before clicking. Scammers use them to disguise malicious sites.",
+  suspiciousTLD: "Certain domain extensions (.xyz, .tk, .buzz, etc.) are frequently associated with fraudulent websites due to their low cost and minimal registration requirements.",
+  nonsecureWebsite: "Websites using HTTP instead of HTTPS do not encrypt data in transit. Legitimate employers use secure connections to protect applicant information.",
+  newDomain: "Websites registered less than 6 months ago may have been created specifically for a scam. Established companies typically have older domains.",
+  blacklistedEntity: "This email, phone number, or domain has been reported and added to our blacklist database by administrators based on previous scam reports.",
+};
+
+function scoreIfFound({ found, weightKey, customIndicator, explanationKey }) {
   if (!found) return { score: 0, indicators: [] };
   const indicatorText =
     customIndicator || weightKey.description || "Risk indicator detected";
-  return { score: weightKey.weight || 0, indicators: [indicatorText] };
+  return {
+    score: weightKey.weight || 0,
+    indicators: [{
+      title: indicatorText,
+      matches: [],
+      explanation: INDICATOR_EXPLANATIONS[explanationKey] || "This indicator was flagged based on automated analysis of the job advert content.",
+    }],
+  };
 }
 
 function checkPaymentRisk(text, isProcurement, hasOfficialDomain) {
@@ -345,11 +367,14 @@ function checkPaymentRisk(text, isProcurement, hasOfficialDomain) {
   for (const keyword of PAYMENT_KEYWORDS) {
     if (lowerText.includes(keyword)) {
       if (isProcurement || hasOfficialDomain) return { score: 0, indicators: [] };
-      return scoreIfFound({
-        found: true,
-        weightKey: riskWeights.financialRequests.paymentRequest,
-        customIndicator: `${riskWeights.financialRequests.paymentRequest.description} ("${keyword}")`,
-      });
+      return {
+        score: riskWeights.financialRequests.paymentRequest.weight || 0,
+        indicators: [{
+          title: `${riskWeights.financialRequests.paymentRequest.description} ("${keyword}")`,
+          matches: [keyword],
+          explanation: "Legitimate employers never ask job applicants to pay money upfront. Requests for fees, deposits, or payments before starting work are a major red flag for employment scams.",
+        }],
+      };
     }
   }
   return { score: 0, indicators: [] };
@@ -364,6 +389,7 @@ function checkFreeEmailDomain(email) {
     found: !!isFree,
     weightKey: riskWeights.recruiterIdentity.freeEmail,
     customIndicator: `${riskWeights.recruiterIdentity.freeEmail.description} (${domain})`,
+    explanationKey: "freeEmail",
   });
 }
 
@@ -375,6 +401,7 @@ function checkNoCompanyName(text) {
     found: !hasCompanyIndicator,
     weightKey: riskWeights.recruiterIdentity.noCompanyName,
     customIndicator: riskWeights.recruiterIdentity.noCompanyName.description,
+    explanationKey: "noCompanyName",
   });
 }
 
@@ -386,28 +413,31 @@ function checkNoInterview(text) {
     found,
     weightKey: riskWeights.contentBased.noInterview,
     customIndicator: riskWeights.contentBased.noInterview.description,
+    explanationKey: "noInterview",
   });
 }
 
 function checkInstantHiring(text) {
   const lowerText = text.toLowerCase();
-  const found = INSTANT_HIRING_KEYWORDS.some((k) => lowerText.includes(k));
+  const matched = INSTANT_HIRING_KEYWORDS.find((k) => lowerText.includes(k));
 
   return scoreIfFound({
-    found,
+    found: !!matched,
     weightKey: riskWeights.contentBased.instantHiring,
-    customIndicator: riskWeights.contentBased.instantHiring.description,
+    customIndicator: matched ? `${riskWeights.contentBased.instantHiring.description} ("${matched}")` : riskWeights.contentBased.instantHiring.description,
+    explanationKey: "instantHiring",
   });
 }
 
 function checkUrgency(text) {
   const lowerText = text.toLowerCase();
-  const found = URGENCY_KEYWORDS.some((k) => lowerText.includes(k));
+  const matched = URGENCY_KEYWORDS.find((k) => lowerText.includes(k));
 
   return scoreIfFound({
-    found,
+    found: !!matched,
     weightKey: riskWeights.contentBased.urgencyLanguage,
-    customIndicator: riskWeights.contentBased.urgencyLanguage.description,
+    customIndicator: matched ? `${riskWeights.contentBased.urgencyLanguage.description} ("${matched}")` : riskWeights.contentBased.urgencyLanguage.description,
+    explanationKey: "urgencyLanguage",
   });
 }
 
@@ -418,6 +448,7 @@ function checkUnrealisticSalary(text) {
     found,
     weightKey: riskWeights.contentBased.unrealisticSalary,
     customIndicator: riskWeights.contentBased.unrealisticSalary.description,
+    explanationKey: "unrealisticSalary",
   });
 }
 
@@ -429,6 +460,7 @@ function checkUrlShortener(text, link) {
     found,
     weightKey: riskWeights.technicalIndicators.urlShortener,
     customIndicator: riskWeights.technicalIndicators.urlShortener.description,
+    explanationKey: "urlShortener",
   });
 }
 
@@ -440,40 +472,54 @@ function checkSuspiciousTLD(text, link) {
     found,
     weightKey: riskWeights.technicalIndicators.suspiciousTLD,
     customIndicator: riskWeights.technicalIndicators.suspiciousTLD.description,
+    explanationKey: "suspiciousTLD",
   });
 }
 
 function checkInformalContact(text) {
   const found = INFORMAL_CONTACT_PATTERNS.some((p) => p.test(text));
   if (!found) return { score: 0, indicators: [] };
-  return { score: 0, indicators: ["Contact via WhatsApp/Telegram only"] };
+  return { score: 0, indicators: [{
+    title: "Contact via WhatsApp/Telegram only",
+    matches: [],
+    explanation: "Legitimate employers use official communication channels like company email. Relying solely on messaging apps like WhatsApp or Telegram makes it harder to verify the recruiter's identity.",
+  }] };
 }
 
 function checkGenericDescription(text) {
   const lowerText = text.toLowerCase();
-  let matchCount = 0;
+  const matchedPhrases = [];
   for (const phrase of GENERIC_DESCRIPTION_PHRASES) {
-    if (lowerText.includes(phrase)) matchCount++;
+    if (lowerText.includes(phrase)) matchedPhrases.push(phrase);
   }
   // Flag if 2+ generic phrases found
-  return scoreIfFound({
-    found: matchCount >= 2,
-    weightKey: riskWeights.contentBased.genericDescription,
-    customIndicator: `${riskWeights.contentBased.genericDescription.description} (${matchCount} vague phrases detected)`,
-  });
+  if (matchedPhrases.length < 2) return { score: 0, indicators: [] };
+  return {
+    score: riskWeights.contentBased.genericDescription.weight || 0,
+    indicators: [{
+      title: `${riskWeights.contentBased.genericDescription.description} (${matchedPhrases.length} vague phrases detected)`,
+      matches: matchedPhrases,
+      explanation: "These phrases are commonly used in fraudulent job adverts to attract victims with vague promises. Legitimate jobs typically provide specific responsibilities and requirements.",
+    }],
+  };
 }
 
 function checkPoorGrammar(text) {
-  let errorCount = 0;
+  const matchedErrors = [];
   for (const pattern of GRAMMAR_ERROR_PATTERNS) {
-    if (pattern.test(text)) errorCount++;
+    const match = text.match(pattern);
+    if (match) matchedErrors.push(match[0]);
   }
   // Flag if 3+ grammar errors found
-  return scoreIfFound({
-    found: errorCount >= 3,
-    weightKey: riskWeights.contentBased.poorGrammar,
-    customIndicator: `${riskWeights.contentBased.poorGrammar.description} (${errorCount} errors found)`,
-  });
+  if (matchedErrors.length < 3) return { score: 0, indicators: [] };
+  return {
+    score: riskWeights.contentBased.poorGrammar.weight || 0,
+    indicators: [{
+      title: `${riskWeights.contentBased.poorGrammar.description} (${matchedErrors.length} errors found)`,
+      matches: matchedErrors,
+      explanation: "Multiple spelling and grammar errors are a common sign of fraudulent job postings, as scammers often operate from different regions and may not use professional language.",
+    }],
+  };
 }
 
 function checkNonsecureWebsite(link) {
@@ -484,6 +530,7 @@ function checkNonsecureWebsite(link) {
     found: isHttp,
     weightKey: riskWeights.technicalIndicators.nonsecureWebsite,
     customIndicator: riskWeights.technicalIndicators.nonsecureWebsite.description,
+    explanationKey: "nonsecureWebsite",
   });
 }
 
@@ -508,6 +555,7 @@ function checkCompanyMismatch(text, email) {
     found: !domainInText,
     weightKey: riskWeights.recruiterIdentity.companyMismatch,
     customIndicator: `${riskWeights.recruiterIdentity.companyMismatch.description} (email domain: ${domain})`,
+    explanationKey: "companyMismatch",
   });
 }
 
@@ -549,6 +597,7 @@ async function checkDomainAge(link) {
       found: isNew,
       weightKey: riskWeights.technicalIndicators.newDomain,
       customIndicator: `${riskWeights.technicalIndicators.newDomain.description} (registered: ${regDate.toISOString().split("T")[0]})`,
+      explanationKey: "newDomain",
     });
   } catch {
     // If lookup fails, don't penalize
@@ -563,18 +612,30 @@ async function checkBlacklist(email, phone, link) {
 
   for (const item of blacklist) {
     if (item.type === "email" && email?.toLowerCase().includes(item.value.toLowerCase())) {
-      indicators.push(`${riskWeights.technicalIndicators.blacklistedEntity.description}: ${item.value}`);
+      indicators.push({
+        title: `${riskWeights.technicalIndicators.blacklistedEntity.description}: ${item.value}`,
+        matches: [item.value],
+        explanation: INDICATOR_EXPLANATIONS.blacklistedEntity,
+      });
       score += riskWeights.technicalIndicators.blacklistedEntity.weight;
     }
     if (item.type === "phone" && phone?.includes(item.value)) {
-      indicators.push(`${riskWeights.technicalIndicators.blacklistedEntity.description}: ${item.value}`);
+      indicators.push({
+        title: `${riskWeights.technicalIndicators.blacklistedEntity.description}: ${item.value}`,
+        matches: [item.value],
+        explanation: INDICATOR_EXPLANATIONS.blacklistedEntity,
+      });
       score += riskWeights.technicalIndicators.blacklistedEntity.weight;
     }
     if (item.type === "domain") {
       const emailDomain = email?.split("@")[1]?.toLowerCase();
       const linkLower = link?.toLowerCase();
       if (emailDomain?.includes(item.value) || linkLower?.includes(item.value)) {
-        indicators.push(`${riskWeights.technicalIndicators.blacklistedEntity.description}: ${item.value}`);
+        indicators.push({
+          title: `${riskWeights.technicalIndicators.blacklistedEntity.description}: ${item.value}`,
+          matches: [item.value],
+          explanation: INDICATOR_EXPLANATIONS.blacklistedEntity,
+        });
         score += riskWeights.technicalIndicators.blacklistedEntity.weight;
       }
     }

@@ -13,6 +13,7 @@ import {
   XCircle,
   Search,
   ChevronRight,
+  ChevronDown,
   Flag,
   Save,
   ArrowLeft,
@@ -40,10 +41,70 @@ interface VerificationResult {
   recruiter_phone: string | null;
   risk_score: number;
   verdict: Verdict;
-  indicators: string[];
+  indicators: (string | { title: string; matches?: string[]; explanation?: string })[];
   user_id: string | null;
   saved: boolean;
   created_at: string;
+}
+
+function ExpandableIndicator({ index, title, matches, explanation }: {
+  index: number;
+  title: string;
+  matches: string[];
+  explanation: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const hasDetails = explanation || (matches && matches.length > 0);
+
+  return (
+    <motion.li
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 0.3 + index * 0.1 }}
+      className="rounded-lg overflow-hidden"
+    >
+      <button
+        onClick={() => hasDetails && setExpanded(!expanded)}
+        className={`w-full flex items-start gap-3 p-3 bg-muted/50 text-left ${hasDetails ? "cursor-pointer hover:bg-muted/80 transition-colors" : ""}`}
+      >
+        {hasDetails ? (
+          expanded ? (
+            <ChevronDown className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+          ) : (
+            <ChevronRight className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+          )
+        ) : (
+          <ChevronRight className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+        )}
+        <span className="text-sm">{title}</span>
+      </button>
+      {expanded && hasDetails && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="px-4 pb-3 pt-1 bg-muted/30 border-t border-border/50"
+        >
+          {matches && matches.length > 0 && (
+            <div className="mb-2">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Detected phrases:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {matches.map((match, i) => (
+                  <span key={i} className="inline-block px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded-full">
+                    "{match}"
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {explanation && (
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              <strong>Why this matters:</strong> {explanation}
+            </p>
+          )}
+        </motion.div>
+      )}
+    </motion.li>
+  );
 }
 
 const verdictConfig = {
@@ -297,18 +358,22 @@ export default function ResultPage() {
                 <div className="mb-8">
                   <h3 className="font-semibold mb-4">Risk Indicators Found</h3>
                   <ul className="space-y-2">
-                    {result.indicators.map((indicator, index) => (
-                      <motion.li
-                        key={index}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 + index * 0.1 }}
-                        className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg"
-                      >
-                        <ChevronRight className="w-5 h-5 text-warning shrink-0 mt-0.5" />
-                        <span className="text-sm">{indicator}</span>
-                      </motion.li>
-                    ))}
+                    {result.indicators.map((indicator, index) => {
+                      const isStructured = typeof indicator === "object" && indicator.title;
+                      const title = isStructured ? indicator.title : indicator;
+                      const matches = isStructured ? indicator.matches : [];
+                      const explanation = isStructured ? indicator.explanation : "";
+
+                      return (
+                        <ExpandableIndicator
+                          key={index}
+                          index={index}
+                          title={title}
+                          matches={matches}
+                          explanation={explanation}
+                        />
+                      );
+                    })}
                   </ul>
                 </div>
               )}
