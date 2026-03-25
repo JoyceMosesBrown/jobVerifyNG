@@ -429,11 +429,8 @@ function checkNoCompanyName(text) {
     /\bcompany:\s*\w+/i,
     /\bcompany\s+name:\s*\w+/i,
     /\b(nigeria|services)\s+limited\b/i,
-    // Brand name contexts: "at Piyata", "join Piyata", "about Piyata"
-    /\b(at|join|about|with|from)\s+[A-Z][a-zA-Z]{2,}\b/,
-    // Standalone capitalized brand on its own line (like "Piyata" on a flyer)
-    // Exclude common section headers like "Requirements", "Responsibilities", "Description"
-    /(?:^|\n)\s*(?!Requirements|Responsibilities|Description|Qualifications|Benefits|Summary|Experience|Skills|About|Location|Salary|Apply|Contact|Duties|Overview)[A-Z][a-zA-Z]{2,}(?:\s+[A-Z][a-zA-Z]+)*\s*(?:\n|$)/,
+    // Brand name contexts: "at Piyata", "join Piyata" — exclude common words after preposition
+    /\b(at|join)\s+(?!Home|Work|Your|Our|The|This|Any|All|An?|No|Some)[A-Z][a-zA-Z]{2,}\b/,
     // Company email domain (not free email)
     /\b\w+@(?!gmail|yahoo|hotmail|outlook|aol|mail|proton|icloud)[a-z]+\.(com|co|org|io|ng|net)\b/i,
   ];

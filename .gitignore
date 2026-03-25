@@ -45,6 +45,8 @@ lerna-debug.log*
 *.traineddata
 
 # =========================
-# Temp files
+# Temp / Config files
 # =========================
 start-vite.js
+.*/settings*.json
+launch.json
