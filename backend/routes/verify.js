@@ -694,11 +694,10 @@ async function checkBlacklist(email, phone, link) {
 }
 
 function decideVerdictByFramework(score) {
-  const bands = [...riskWeights.riskBands].sort((a, b) => b.min - a.min);
-  for (const band of bands) {
-    if (score >= band.min) return band.verdict;
-  }
-  return "likely_legit";
+  if (score === 0) return "Legit";
+  if (score <= 3) return "Low Risk";
+  if (score <= 6) return "Moderate Risk";
+  return "High Risk";
 }
 
 async function loadPdfJsLegacy() {
