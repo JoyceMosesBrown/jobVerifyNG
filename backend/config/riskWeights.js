@@ -71,10 +71,12 @@ module.exports = {
     },
   },
 
-  //  risk scale: 0-4 = low, 5-8 = moderate, 9+ = high
+  // Risk classification scale
+  // 0 = Legit, 1-3 = Low Risk, 4-6 = Moderate Risk, 7+ = High Risk
   riskBands: [
-    { min: 0, max: 4, verdict: "likely_legit" },
-    { min: 5, max: 8, verdict: "needs_review" },
-    { min: 9, max: Infinity, verdict: "high_risk_scam" },
+    { min: 0, max: 0, verdict: "Legit" },
+    { min: 1, max: 3, verdict: "Low Risk" },
+    { min: 4, max: 6, verdict: "Moderate Risk" },
+    { min: 7, max: Infinity, verdict: "High Risk" },
   ],
 };
