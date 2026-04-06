@@ -50,3 +50,10 @@ lerna-debug.log*
 start-vite.js
 .*/settings*.json
 launch.json
+
+# =========================
+# Coverage and test output
+# =========================
+coverage/
+*.lcov
+test-results/
