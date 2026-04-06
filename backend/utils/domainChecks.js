@@ -2,7 +2,7 @@
 
 const axios = require("axios");
 const whois = require("whois-json");
-const { weights } = require("../config/riskWeights");
+const riskWeights = require("../config/riskWeights");
 
 // Check if link uses HTTPS
 function checkHttps(url) {
@@ -10,7 +10,7 @@ function checkHttps(url) {
 
   if (!url.startsWith("https://")) {
     return {
-      score: weights.nonSecureHttp,
+      score: riskWeights.technicalIndicators.nonsecureWebsite.weight,
       indicators: ["Website is not using HTTPS (non-secure connection)"],
     };
   }
@@ -27,7 +27,7 @@ async function checkLinkReachable(url) {
     return { score: 0, indicators: [] };
   } catch (error) {
     return {
-      score: weights.linkUnreachable,
+      score: 1,
       indicators: ["Job application link is unreachable or broken"],
     };
   }
@@ -49,7 +49,7 @@ async function checkDomainAge(url) {
 
     if (ageInDays < 180) {
       return {
-        score: weights.domainRecentlyRegistered,
+        score: riskWeights.technicalIndicators.newDomain.weight,
         indicators: ["Website domain was registered recently"],
       };
     }
