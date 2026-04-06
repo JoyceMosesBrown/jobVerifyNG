@@ -37,7 +37,13 @@ app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
     message: "JobVerify NG API is running",
+    version: "1.0.0",
   });
+});
+
+// Handle 404 for undefined routes
+app.use((req, res) => {
+  res.status(404).json({ error: "Route not found" });
 });
 
 // Start server
