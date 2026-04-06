@@ -882,6 +882,10 @@ router.post("/", async (req, res) => {
   try {
     const { advertText, advertLink, sourcePlatform, recruiterEmail, recruiterPhone, userId } = req.body;
 
+    if (!advertText && !advertLink) {
+      return res.status(400).json({ error: "Please provide job advert text or a link to verify" });
+    }
+
     const ip = getClientIp(req);
     const identifierBase = userId ? `user:${userId}` : `ip:${ip}`;
     const advertKey = makeAdvertKey(advertText, advertLink);
